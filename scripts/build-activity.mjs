@@ -4,7 +4,7 @@
 // Token: GITHUB_TOKEN sees public repositories only. The language mix includes private
 // repositories, so it is only refreshed when STATS_TOKEN is set (fine-grained PAT, all
 // repositories, "Metadata: read-only"); otherwise the snapshot in scripts/languages.json is reused.
-// Only aggregate byte counts are stored and rendered; no repository name.
+// The snapshot stores rounded shares only; no byte counts and no repository names.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { color, text, measure, svg, write, cardDefs, cardBase, motionCss } from './lib/svg.mjs';
 
@@ -55,19 +55,24 @@ const stats = [
   { value: best, label: 'day longest streak' },
 ];
 
-let bytes = {};
+// The snapshot is committed to a public repository, so it holds only what the card already
+// shows: the top five languages plus "Other", as shares rounded to 0.5%. No byte counts, and no
+// languages that the card folds into "Other".
+let languages;
 if (REFRESH_LANGUAGES) {
+  const bytes = {};
   for (const repo of repositories.nodes)
     for (const { size, node } of repo.languages.edges) bytes[node.name] = (bytes[node.name] || 0) + size;
-  writeFileSync(LANG_CACHE, JSON.stringify(bytes, null, 2) + '\n');
+  const total = Object.values(bytes).reduce((a, b) => a + b, 0);
+  const ranked = Object.entries(bytes).sort((a, b) => b[1] - a[1]);
+  const round = (b) => Math.round((b / total) * 200) / 200;
+  languages = ranked.slice(0, 5).map(([name, b]) => ({ name, share: round(b) }));
+  const rest = ranked.slice(5).reduce((n, [, b]) => n + b, 0);
+  if (rest) languages.push({ name: 'Other', share: round(rest) });
+  writeFileSync(LANG_CACHE, JSON.stringify(languages, null, 2) + '\n');
 } else {
-  bytes = JSON.parse(readFileSync(LANG_CACHE, 'utf8'));
+  languages = JSON.parse(readFileSync(LANG_CACHE, 'utf8'));
 }
-const totalBytes = Object.values(bytes).reduce((a, b) => a + b, 0);
-const ranked = Object.entries(bytes).sort((a, b) => b[1] - a[1]);
-const languages = ranked.slice(0, 5).map(([name, b]) => ({ name, share: b / totalBytes }));
-const rest = ranked.slice(5).reduce((n, [, b]) => n + b, 0);
-if (rest) languages.push({ name: 'Other', share: rest / totalBytes });
 
 // Brand-neutral ramp from the profile palette: languages are ranked, so tone encodes rank.
 const ramp = [color.signal, '#7DD3FC', '#93A5F8', color.violet, '#6B7A99', color.dim];

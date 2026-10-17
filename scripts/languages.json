@@ -1,11 +1,26 @@
-{
-  "HTML": 38836,
-  "CSS": 30432,
-  "JavaScript": 568128,
-  "SCSS": 16448,
-  "TypeScript": 10265010,
-  "Kotlin": 3680,
-  "Shell": 1465,
-  "Vue": 96364,
-  "Dockerfile": 2274
-}
+[
+  {
+    "name": "TypeScript",
+    "share": 0.93
+  },
+  {
+    "name": "JavaScript",
+    "share": 0.055
+  },
+  {
+    "name": "Vue",
+    "share": 0.01
+  },
+  {
+    "name": "HTML",
+    "share": 0.005
+  },
+  {
+    "name": "CSS",
+    "share": 0.005
+  },
+  {
+    "name": "Other",
+    "share": 0
+  }
+]
