@@ -1,0 +1,17 @@
+{
+  "name": "cristianmingorance07-profile",
+  "private": true,
+  "type": "module",
+  "description": "Generators for the SVG assets of the GitHub profile README.",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build": "node scripts/build-assets.mjs",
+    "activity": "node scripts/build-activity.mjs"
+  },
+  "devDependencies": {
+    "@fontsource/geist-sans": "5.2.5",
+    "@fontsource/jetbrains-mono": "5.2.5",
+    "opentype.js": "1.3.4",
+    "simple-icons": "13.21.0"
+  }
+}
