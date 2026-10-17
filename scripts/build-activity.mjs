@@ -1,22 +1,24 @@
 // Renders assets/activity.svg and assets/activity-compact.svg from the GitHub GraphQL API.
 // Runs daily in .github/workflows/activity.yml; can also run locally with GITHUB_TOKEN set.
 //
-// Token: GITHUB_TOKEN sees public repositories only. Set the optional STATS_TOKEN secret
-// (fine-grained PAT, all repositories, "Metadata: read-only") to include private repositories
-// in the language mix. Only aggregate byte counts are used; no repository name is rendered.
+// Token: GITHUB_TOKEN sees public repositories only. The language mix includes private
+// repositories, so it is only refreshed when STATS_TOKEN is set (fine-grained PAT, all
+// repositories, "Metadata: read-only"); otherwise the snapshot in scripts/languages.json is reused.
+// Only aggregate byte counts are stored and rendered; no repository name.
+import { readFileSync, writeFileSync } from 'node:fs';
 import { color, text, measure, svg, write, cardDefs, cardBase, motionCss } from './lib/svg.mjs';
 
 const OUT = new URL('../assets/', import.meta.url).pathname.replace(/^\/(\w:)/, '$1');
 const LOGIN = process.env.PROFILE_LOGIN || 'CristianMingorance07';
 const TOKEN = process.env.STATS_TOKEN || process.env.GITHUB_TOKEN;
+const REFRESH_LANGUAGES = Boolean(process.env.STATS_TOKEN || process.env.REFRESH_LANGUAGES);
+const LANG_CACHE = new URL('./languages.json', import.meta.url);
 if (!TOKEN) throw new Error('Set GITHUB_TOKEN (or STATS_TOKEN) to query the GitHub API.');
 
 const query = `query($login: String!) {
   user(login: $login) {
     contributionsCollection {
       startedAt endedAt
-      totalCommitContributions totalPullRequestContributions
-      totalPullRequestReviewContributions restrictedContributionsCount
       contributionCalendar { totalContributions weeks { contributionDays { date contributionCount } } }
     }
     repositories(ownerAffiliations: OWNER, isFork: false, first: 100) {
@@ -44,16 +46,23 @@ const weeks = cc.contributionCalendar.weeks.map((w) => ({
 let streak = 0, best = 0;
 for (const d of days) { streak = d.contributionCount ? streak + 1 : 0; best = Math.max(best, streak); }
 
+// Commit and pull request totals only count public repositories, while the calendar also
+// counts private work, so every figure here is derived from the calendar to stay consistent.
 const stats = [
   { value: cc.contributionCalendar.totalContributions, label: 'contributions' },
-  { value: cc.totalCommitContributions, label: 'commits' },
-  { value: cc.totalPullRequestContributions, label: 'pull requests' },
   { value: days.filter((d) => d.contributionCount).length, label: 'active days' },
+  { value: weeks.filter((w) => w.count).length, label: 'active weeks' },
+  { value: best, label: 'day longest streak' },
 ];
 
-const bytes = {};
-for (const repo of repositories.nodes)
-  for (const { size, node } of repo.languages.edges) bytes[node.name] = (bytes[node.name] || 0) + size;
+let bytes = {};
+if (REFRESH_LANGUAGES) {
+  for (const repo of repositories.nodes)
+    for (const { size, node } of repo.languages.edges) bytes[node.name] = (bytes[node.name] || 0) + size;
+  writeFileSync(LANG_CACHE, JSON.stringify(bytes, null, 2) + '\n');
+} else {
+  bytes = JSON.parse(readFileSync(LANG_CACHE, 'utf8'));
+}
 const totalBytes = Object.values(bytes).reduce((a, b) => a + b, 0);
 const ranked = Object.entries(bytes).sort((a, b) => b[1] - a[1]);
 const languages = ranked.slice(0, 5).map(([name, b]) => ({ name, share: b / totalBytes }));

@@ -1,6 +1,7 @@
 # Regenerates assets/activity*.svg from the GitHub GraphQL API once a day.
-# Reads public data with the built-in GITHUB_TOKEN; the optional STATS_TOKEN secret
-# (fine-grained PAT, "Metadata: read-only") adds private repositories to the language mix.
+# Contributions come from the built-in GITHUB_TOKEN. The language mix is refreshed only when the
+# optional STATS_TOKEN secret (fine-grained PAT, "Metadata: read-only") is set; otherwise the
+# committed snapshot in scripts/languages.json is reused.
 # The commit is authored by github-actions[bot], so it never counts as a personal contribution.
 name: Activity
 
@@ -42,7 +43,7 @@ jobs:
 
       - name: Commit if changed
         run: |
-          git add assets/activity.svg assets/activity-compact.svg
+          git add assets/activity.svg assets/activity-compact.svg scripts/languages.json
           if git diff --cached --quiet; then
             echo "No changes."
             exit 0

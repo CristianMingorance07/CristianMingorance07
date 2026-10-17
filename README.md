@@ -57,7 +57,7 @@ A full-stack service that counts customer visits and plants a tree every N visit
 
 <picture>
   <source media="(max-width: 640px)" srcset="assets/activity-compact.svg">
-  <img src="assets/activity.svg" width="100%" alt="GitHub activity over the last 12 months: weekly contributions, totals for contributions, commits, pull requests and active days, and the language mix by code size across my repositories.">
+  <img src="assets/activity.svg" width="100%" alt="GitHub activity over the last 12 months: weekly contributions, total contributions, active days, active weeks and longest streak, and the language mix by code size across my repositories.">
 </picture>
 
 <sub>Generated daily from the GitHub API by a workflow in this repository. No third-party services.</sub>
